@@ -12,6 +12,8 @@ import hmac
 import requests
 import json
 import traceback  
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 # Load environment variables
 load_dotenv()
@@ -27,13 +29,13 @@ client = OpenAI(
 
 # Database configuration - Updated to use PyMySQL
 def get_db_connection():
-    return pymysql.connect(
-        host=os.getenv('MYSQL_HOST'),
-        user=os.getenv('MYSQL_USER'),
-        password=os.getenv('MYSQL_PASSWORD'),
-        database=os.getenv('MYSQL_DB'),
-        charset='utf8mb4',
-        cursorclass=pymysql.cursors.DictCursor
+    return psycopg2.connect(
+        host=os.getenv('PGHOST'),
+        user=os.getenv('PGUSER'), 
+        password=os.getenv('PGPASSWORD'),
+        database=os.getenv('PGDATABASE'),
+        port=os.getenv('PGPORT', 5432),
+        cursor_factory=RealDictCursor
     )
 
 
