@@ -36,6 +36,91 @@ def get_db_connection():
         port=os.getenv('PGPORT', 5432),
         cursor_factory=RealDictCursor
     )
+def setup_database():
+    conn = psycopg2.connect(
+        host=os.getenv('PGHOST'),
+        user=os.getenv('PGUSER'),
+        password=os.getenv('PGPASSWORD'),
+        database=os.getenv('PGDATABASE'),
+        port=os.getenv('PGPORT', 5432)
+    )
+    cursor = conn.cursor()
+    
+    # Create tables (adapt your MySQL schema)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            email VARCHAR(255) UNIQUE NOT NULL,
+            password VARCHAR(255) NOT NULL,
+            trial_end_date TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS subscription_plans (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(100) NOT NULL,
+            price DECIMAL(10,2) NOT NULL,
+            duration_days INTEGER NOT NULL,
+            is_active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS subscriptions (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id),
+            plan_id INTEGER REFERENCES subscription_plans(id),
+            status VARCHAR(50) NOT NULL,
+            start_date TIMESTAMP,
+            end_date TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS payments (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id),
+            subscription_id INTEGER REFERENCES subscriptions(id),
+            plan_id INTEGER REFERENCES subscription_plans(id),
+            amount DECIMAL(10,2),
+            status VARCHAR(50),
+            payment_method VARCHAR(50),
+            transaction_id VARCHAR(255),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS recipes (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id),
+            recipe_name VARCHAR(255) NOT NULL,
+            ingredients TEXT,
+            instructions TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    
+    # Insert default subscription plans
+    cursor.execute("""
+        INSERT INTO subscription_plans (name, price, duration_days) 
+        VALUES 
+        ('Monthly', 999.00, 30),
+        ('Yearly', 9999.00, 365)
+        ON CONFLICT DO NOTHING
+    """)
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print("Database setup complete!")
 
 
 def has_active_subscription(user_id):
@@ -1098,6 +1183,7 @@ def health_check():
         return jsonify({'status': 'unhealthy', 'database': 'disconnected', 'error': str(e)}), 500
 
 if __name__ == '__main__':
+    setup_database()
     port = int(os.environ.get('PORT', 5000))
     debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
     app.run(host='0.0.0.0', port=port, debug=debug_mode)
