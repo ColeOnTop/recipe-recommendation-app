@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Plateful</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card">
+            <h1>🍳 PlateFul</h1>
+            <p style="font-family: cursive; color: rgb(102, 61, 61);">Ready to turn your home ingredients to incredible Masterpieces?😉 join Plateful today!</p>
+            <h2>Register</h2>
+            
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for message in messages %}
+                            <div class="flash-message">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            
+            <form method="POST">
+                <div class="form-group">
+                    <input type="text" name="name" placeholder="Full Name" required>
+                </div>
+                <div class="form-group">
+                    <input type="email" name="email" placeholder="Email" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" name="password" placeholder="Password" required>
+                </div>
+                <button type="submit" class="primary-btn full-width">Register</button>
+            </form>
+            
+            <p class="auth-link">
+                Already have an account? <a href="{{ url_for('login') }}">Login here</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,3 @@
+ngrok config add-authtoken 326UR4RxGCpsyu52IouoDE8FIIm_5TrnVpHAQd2zknonPHY7i
+
+mysql -u root -p recipe_recommender < database/schema2.sql

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subscription - PlateFul</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1 style="color: orange;">🍳 PlateFul</h1>
+            <div class="user-info">
+                <span style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: small;">Welcome, {{ user_name }}!</span>
+                <a href="{{ url_for('index') }}" class="logout-btn">Home</a>
+                <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="subscription-section" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: medium;">
+            <h2>Your Subscription</h2>
+            
+            {% if subscription %}
+            <div class="subscription-status">
+                <h3>Current Plan: {{ subscription.plan_name }}</h3>
+                <p>Status: 
+                    {% if subscription.status == 'active' %}
+                        <span class="status-active">Active</span>
+                    {% elif subscription.status == 'trial' %}
+                        <span class="status-trial">Trial</span>
+                    {% else %}
+                        <span class="status-expired">Expired</span>
+                    {% endif %}
+                </p>
+                
+                {% if subscription.status == 'trial' and subscription.trial_end_date %}
+                <p>Trial ends: {{ subscription.trial_end_date.strftime('%Y-%m-%d') }}</p>
+                {% if subscription.trial_end_date and subscription.trial_end_date > now %}
+                    <p>Days remaining: {{ (subscription.trial_end_date - now).days }}</p>
+                {% else %}
+                    <p>Trial expired</p>
+                {% endif %}
+                {% endif %}
+                
+                {% if subscription.end_date %}
+                <p>Renewal date: {{ subscription.end_date.strftime('%Y-%m-%d') }}</p>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="subscription-status">
+                <h3>No Active Subscription</h3>
+                <p>You don't have an active subscription. Choose a plan below to continue using PlateFul.</p>
+            </div>
+            {% endif %}
+
+            <div class="subscription-plans">
+                <h3>Available Plans</h3>
+                <div class="plans-grid">
+                    {% for plan in plans %}
+                    <div class="plan-card">
+                        <h4>{{ plan.name }}</h4>
+                        <div class="plan-price">KES {{ plan.price }}</div>
+                        <div class="plan-duration">{{ plan.duration_days }} days</div>
+                        <ul class="plan-features">
+                            <li>Unlimited recipe recommendations</li>
+                            <li>Save your favorite recipes</li>
+                            <li>Priority support</li>
+                        </ul>
+                        {% if subscription and subscription.status == 'active' %}
+                            <button class="primary-btn" disabled>Current Plan</button>
+                        {% else %}
+                            <button type="button" class="primary-btn" data-plan-id="{{ plan.id }}" onclick="createSubscription(this.dataset.planId)">
+                                Select Plan
+                            </button>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Add manual verification button for testing -->
+            <div class="manual-verification" style="margin-top: 2rem; padding: 1rem; border: 1px solid #ddd; border-radius: 8px;">
+                <h4>Payment Verification</h4>
+                <p>If you completed a payment but your subscription isn't active, click below to verify:</p>
+                <button type="button" class="secondary-btn" onclick="verifyPayment()">Verify Payment</button>
+            </div>
+        </section>
+    </main>
+
+    <script>
+    async function createSubscription(planId) {
+        const button = event.target;
+        const originalText = button.textContent;
+        
+        // Convert string to number
+        const planIdNumber = parseInt(planId);
+        
+        try {
+            // Show loading state
+            button.textContent = 'Processing...';
+            button.disabled = true;
+            
+            console.log('Making request to create subscription with plan ID:', planIdNumber);
+            
+            const response = await fetch('/create_subscription', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    plan_id: planIdNumber
+                })
+            });
+
+            console.log('Response status:', response.status);
+
+            // Check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                console.error('Response is not JSON:', contentType);
+                const text = await response.text();
+                console.error('Response text:', text);
+                throw new Error('Server returned non-JSON response');
+            }
+
+            const data = await response.json();
+            console.log('Response data:', data);
+
+            if (response.ok && data.success) {
+                // Redirect to payment URL
+                if (data.payment_url) {
+                    console.log('Redirecting to payment URL:', data.payment_url);
+                    window.location.href = data.payment_url;
+                } else {
+                    alert('Payment URL not received. Please try again.');
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }
+            } else {
+                // Handle API errors
+                const errorMessage = data.error || `Server error: ${response.status}`;
+                console.error('API Error:', errorMessage);
+                alert(errorMessage);
+                button.textContent = originalText;
+                button.disabled = false;
+            }
+        } catch (error) {
+            console.error('Fetch Error:', error);
+            
+            // More specific error messages
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                alert('Network connection error. Please check your internet connection and try again.');
+            } else if (error.message.includes('JSON')) {
+                alert('Server response error. Please contact support if this persists.');
+            } else {
+                alert('Error: ' + error.message);
+            }
+            
+            // Restore button state
+            button.textContent = originalText;
+            button.disabled = false;
+        }
+    }
+
+    function verifyPayment(checkoutId) {
+        if (!checkoutId) {
+            checkoutId = prompt("Please enter your checkout ID (from payment confirmation):");
+            if (!checkoutId) return;
+        }
+        
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = 'Verifying...';
+        button.disabled = true;
+        
+        fetch('/verify_payment', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                checkout_id: checkoutId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                alert('Verification failed: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Verification failed due to network error.');
+        })
+        .finally(() => {
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
+    }
+
+    // Auto-verify if checkout_id is in URL (from callback)
+    const urlParams = new URLSearchParams(window.location.search);
+    const checkoutId = urlParams.get('checkout_id');
+    if (checkoutId) {
+        console.log('Auto-verifying payment with checkout_id:', checkoutId);
+        // Add small delay to ensure page is loaded
+        setTimeout(() => {
+            verifyPayment(checkoutId);
+        }, 1000);
+    }
+    </script>
+</body>
+</html>

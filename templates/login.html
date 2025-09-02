@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - PlateFul</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card">
+            <h1>🍳 PlateFul</h1>
+            <p style="font-family: cursive; color: rgb(102, 61, 61);"><i>Got ingredients but you are feeling stuck? We've got you!</i></p>
+            <h2>Login</h2>
+            
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for message in messages %}
+                            <div class="flash-message">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            
+            <form method="POST">
+                <div class="form-group">
+                    <input type="email" name="email" placeholder="Email" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" name="password" placeholder="Password" required>
+                </div>
+                <button type="submit" class="primary-btn full-width">Login</button>
+            </form>
+            
+            <p class="auth-link">
+                Don't have an account? <a href="{{ url_for('register') }}">Register here</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

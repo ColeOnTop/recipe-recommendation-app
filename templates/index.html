@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Recommender - Simple Food Matcher</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1 style="color: orange;">🍳 PlateFul
+            </h1>
+            <div class="user-info">
+                <span style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: small;">Welcome, {{ user_name }}!</span>
+                {% if subscription_status == 'active' %}
+                    <span class="subscription-badge active">Premium</span>
+                {% elif subscription_status == 'trial' and trial_end_date %}
+                    <span class="subscription-badge trial">Trial: {{ (trial_end_date|string)[:10] }}</span>
+                {% else %}
+                    <span class="subscription-badge expired">Expired</span>
+                {% endif %}
+                <a href="{{ url_for('subscription') }}"class="secondary-btn">Subscription</a>
+                <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="ingredient-selector">
+            <h2>What ingredients do you have?</h2>
+            <div class="input-group">
+                <input type="text" id="ingredientInput" placeholder="Enter ingredients (e.g., chicken, tomatoes, garlic)">
+                <button id="getRecipesBtn" class="primary-btn">Get Recipes</button>
+            </div>
+            <div class="popular-ingredients">
+                <span>Popular: </span>
+                <button class="ingredient-tag" data-ingredient="chicken">Chicken</button>
+                <button class="ingredient-tag" data-ingredient="tomatoes">Tomatoes</button>
+                <button class="ingredient-tag" data-ingredient="pasta">Pasta</button>
+                <button class="ingredient-tag" data-ingredient="rice">Rice</button>
+                <button class="ingredient-tag" data-ingredient="eggs">Eggs</button>
+            </div>
+        </section>
+
+        <section class="recipes-section">
+            <div class="section-header">
+                <h2>Recipe Suggestions</h2>
+                <button id="showMyRecipesBtn" class="secondary-btn">My Saved Recipes</button>
+            </div>
+            <div id="loadingSpinner" class="loading hidden">
+                <div class="spinner"></div>
+                <p>Getting delicious recipes for you...</p>
+            </div>
+            <div id="recipesContainer" class="recipes-grid"></div>
+        </section>
+    </main>
+    
+    <p class="bottom-left"><i>"Always Fill Your Plate With Ideas"</i></p>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
