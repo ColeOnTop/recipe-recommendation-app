@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, flash
-import pymysql
 from dotenv import load_dotenv
 import os
 from openai import OpenAI
@@ -206,7 +205,7 @@ def register():
             conn.commit()
             flash('Registration successful! Enjoy your 14-day free trial. Please log in.')
             return redirect(url_for('login'))
-        except pymysql.IntegrityError:
+        except psycopg2.IntegrityError:
             flash('Email already exists')
         finally:
             cursor.close()
@@ -1055,7 +1054,7 @@ def update_profile():
         
         return jsonify({'success': True, 'message': 'Profile updated successfully'})
         
-    except pymysql.IntegrityError:
+    except psycopg2.IntegrityError:
         return jsonify({'error': 'Email already exists'}), 400
     except Exception as e:
         return jsonify({'error': 'Failed to update profile'}), 500
